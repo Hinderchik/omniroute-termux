@@ -1,0 +1,37 @@
+name: Build OmniRoute for Termux
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [aarch64, armv7l]
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      
+      - run: npm ci
+      
+      - name: Build for ${{ matrix.arch }}
+        run: |
+          npm rebuild better-sqlite3 --build-from-source
+      
+      - name: Package
+        run: |
+          mkdir -p dist
+          tar -czf dist/omniroute-termux-${{ matrix.arch }}.tar.gz \
+            node_modules src package.json package-lock.json
+      
+      - uses: actions/upload-artifact@v4
+        with:
+          name: omniroute-termux-${{ matrix.arch }}
+          path: dist/*.tar.gz
